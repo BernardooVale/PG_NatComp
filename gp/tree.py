@@ -135,12 +135,16 @@ class Individual:
         case_errors: Optional[np.ndarray] = None,
         origin_operator: str = "init",
         parent_fitness: Optional[List[float]] = None,
+        scale_offset: float = 0.0,
+        scale_slope: float = 1.0,
     ):
         self.root: Node = root
         self.fitness: Optional[float] = fitness
         self.case_errors: Optional[np.ndarray] = case_errors
         self.origin_operator: str = origin_operator
         self.parent_fitness: List[float] = parent_fitness if parent_fitness is not None else []
+        self.scale_offset: float = scale_offset
+        self.scale_slope: float = scale_slope
 
     @property
     def size(self) -> int:
@@ -154,7 +158,18 @@ class Individual:
         return self.root.canonical_repr()
 
     def to_string(self) -> str:
-        return self.root.to_string()
+        base_str = self.root.to_string()
+        if self.scale_offset != 0.0 or self.scale_slope != 1.0:
+            return f"({self.scale_offset:.4g} + {self.scale_slope:.4g} * {base_str})"
+        return base_str
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """Evaluate tree and apply linear scaling if active."""
+        raw = self.root.evaluate(X)
+        if self.scale_offset != 0.0 or self.scale_slope != 1.0:
+            with np.errstate(over="ignore", invalid="ignore"):
+                return self.scale_offset + self.scale_slope * raw
+        return raw
 
     def copy(self) -> Individual:
         return Individual(
@@ -163,8 +178,12 @@ class Individual:
             case_errors=self.case_errors.copy() if self.case_errors is not None else None,
             origin_operator=self.origin_operator,
             parent_fitness=list(self.parent_fitness),
+            scale_offset=self.scale_offset,
+            scale_slope=self.scale_slope,
         )
 
     def invalidate_cache(self) -> None:
         self.fitness = None
         self.case_errors = None
+        self.scale_offset = 0.0
+        self.scale_slope = 1.0

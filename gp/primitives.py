@@ -17,6 +17,16 @@ def protected_div(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.where(np.abs(b) < 1e-6, 1.0, a / b)
 
 
+def analytic_quotient(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Analytic Quotient (Ni et al., 2013): a / sqrt(1 + b^2).
+
+    Everywhere continuous and differentiable, eliminating vertical asymptotes (poles).
+    """
+    with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
+        b_safe = np.clip(b, -1e150, 1e150)
+        return a / np.sqrt(1.0 + b_safe * b_safe)
+
+
 def add(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return a + b
 
@@ -58,6 +68,7 @@ PRIMITIVES: Dict[str, Primitive] = {
     "sub": Primitive("sub", 2, sub),
     "mul": Primitive("mul", 2, mul),
     "div": Primitive("div", 2, protected_div),
+    "aq": Primitive("aq", 2, analytic_quotient),
     "sin": Primitive("sin", 1, sin),
     "cos": Primitive("cos", 1, cos),
     "exp": Primitive("exp", 1, exp),

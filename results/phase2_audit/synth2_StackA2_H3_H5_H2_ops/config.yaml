@@ -1,0 +1,34 @@
+dataset: synth2
+pop_size: 100
+generations: 100
+max_size: 7
+size_mode: depth
+init_method: ramped_half_and_half
+init_min_depth: 1
+selection: lexicase
+tournament_size: 2
+lexicase_epsilon: mad
+crossover_prob: 0.7
+mutation_prob: 0.15
+mutation_type: mixed
+elitism: true
+elite_size: 1
+function_set:
+- add
+- sub
+- mul
+- div
+const_range:
+- -1.0
+- 1.0
+const_prob: 0.3
+normalize_concrete: false
+dedup_offspring: true
+n_islands: 1
+migration_interval: 20
+migration_size: 2
+parsimony_tiebreak: true
+linear_scaling: false
+seed: 0
+n_runs: 30
+n_jobs: -1

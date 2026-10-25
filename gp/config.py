@@ -21,13 +21,20 @@ class GPConfig:
     lexicase_epsilon: str = "mad"  # 'mad' or 'none'
     crossover_prob: float = 0.9
     mutation_prob: float = 0.05
-    mutation_type: str = "subtree"  # 'subtree' or 'point'
+    mutation_type: str = "subtree"  # 'subtree', 'point', or 'mixed'
     elitism: bool = True
     elite_size: int = 1
     function_set: List[str] = field(default_factory=lambda: ["add", "sub", "mul", "div"])
     const_range: Tuple[float, float] = (-1.0, 1.0)
     const_prob: float = 0.3
     normalize_concrete: bool = False
+    # Phase 2 auditable improvements (all default to False / 1 for 100% backward compatibility)
+    dedup_offspring: bool = False
+    n_islands: int = 1
+    migration_interval: int = 20
+    migration_size: int = 2
+    parsimony_tiebreak: bool = False
+    linear_scaling: bool = False
     seed: int = 0
     n_runs: int = 30
     n_jobs: int = -1
@@ -60,8 +67,8 @@ class GPConfig:
             raise ValueError(f"crossover_prob must be in [0, 1], got {self.crossover_prob}")
         if not (0.0 <= self.mutation_prob <= 1.0):
             raise ValueError(f"mutation_prob must be in [0, 1], got {self.mutation_prob}")
-        if self.mutation_type not in ("subtree", "point"):
-            raise ValueError(f"mutation_type must be 'subtree' or 'point', got {self.mutation_type}")
+        if self.mutation_type not in ("subtree", "point", "mixed"):
+            raise ValueError(f"mutation_type must be 'subtree', 'point' or 'mixed', got {self.mutation_type}")
         if self.elite_size < 0:
             raise ValueError(f"elite_size must be >= 0, got {self.elite_size}")
         if self.elitism and self.elite_size >= self.pop_size:
@@ -72,16 +79,21 @@ class GPConfig:
             raise ValueError(f"const_range must be a pair (min, max) with min <= max, got {self.const_range}")
         if not self.function_set:
             raise ValueError("function_set cannot be empty")
-        valid_fns = {"add", "sub", "mul", "div", "sin", "cos", "exp", "log", "sqrt"}
+        valid_fns = {"add", "sub", "mul", "div", "aq", "sin", "cos", "exp", "log", "sqrt"}
         for fn in self.function_set:
             if fn not in valid_fns:
                 raise ValueError(f"Unknown function '{fn}' in function_set. Valid functions are: {sorted(valid_fns)}")
+        if self.n_islands < 1:
+            raise ValueError(f"n_islands must be >= 1, got {self.n_islands}")
+        if self.migration_interval < 1:
+            raise ValueError(f"migration_interval must be >= 1, got {self.migration_interval}")
+        if self.migration_size < 0:
+            raise ValueError(f"migration_size must be >= 0, got {self.migration_size}")
 
     @classmethod
     def from_yaml(cls, path: Union[str, Path]) -> GPConfig:
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
-        # Convert const_range to tuple if list
         if "const_range" in data and isinstance(data["const_range"], list):
             data["const_range"] = tuple(data["const_range"])
         return cls(**data)
@@ -98,6 +110,7 @@ class GPConfig:
 
     def override(self, overrides: Sequence[str]) -> GPConfig:
         """Override configuration fields using list of 'key=value' strings."""
+        bool_conv = lambda v: str(v).lower() in ("true", "1", "yes")
         type_hints = {
             "dataset": str,
             "pop_size": int,
@@ -112,12 +125,18 @@ class GPConfig:
             "crossover_prob": float,
             "mutation_prob": float,
             "mutation_type": str,
-            "elitism": lambda v: str(v).lower() in ("true", "1", "yes"),
+            "elitism": bool_conv,
             "elite_size": int,
             "function_set": lambda v: [x.strip() for x in v.split(",") if x.strip()],
             "const_range": lambda v: tuple(float(x.strip()) for x in v.split(",")),
             "const_prob": float,
-            "normalize_concrete": lambda v: str(v).lower() in ("true", "1", "yes"),
+            "normalize_concrete": bool_conv,
+            "dedup_offspring": bool_conv,
+            "n_islands": int,
+            "migration_interval": int,
+            "migration_size": int,
+            "parsimony_tiebreak": bool_conv,
+            "linear_scaling": bool_conv,
             "seed": int,
             "n_runs": int,
             "n_jobs": int,

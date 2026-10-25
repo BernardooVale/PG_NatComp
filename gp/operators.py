@@ -164,6 +164,33 @@ def point_mutation(
     return Individual(t, origin_operator="mutation", parent_fitness=[p_fit])
 
 
+def mixed_mutation(
+    parent: Individual,
+    n_features: int,
+    config: GPConfig,
+    rng: np.random.Generator,
+) -> Individual:
+    """Mixed mutation (H2): combines targeted ERC Gaussian tuning, point mutation, and subtree mutation."""
+    p_fit = parent.fitness if parent.fitness is not None else float("inf")
+    roll = rng.random()
+
+    if roll < 0.35:
+        # Targeted ERC Gaussian perturbation if tree contains constants
+        t = parent.root.copy()
+        all_nodes = get_all_nodes(t)
+        const_nodes = [n[0] for n in all_nodes if n[0].is_constant]
+        if const_nodes:
+            target_c = const_nodes[rng.integers(0, len(const_nodes))]
+            sigma = 0.25 * max(1.0, abs(float(target_c.value)))
+            target_c.value = float(target_c.value) + float(rng.normal(0.0, sigma))
+            return Individual(t, origin_operator="mutation", parent_fitness=[p_fit])
+        return point_mutation(parent, n_features, config, rng)
+    elif roll < 0.70:
+        return point_mutation(parent, n_features, config, rng)
+    else:
+        return subtree_mutation(parent, n_features, config, rng)
+
+
 def mutate_individual(
     ind: Individual,
     n_features: int,
@@ -173,4 +200,6 @@ def mutate_individual(
     """Apply mutation based on configured mutation_type."""
     if config.mutation_type == "point":
         return point_mutation(ind, n_features, config, rng)
+    elif config.mutation_type == "mixed":
+        return mixed_mutation(ind, n_features, config, rng)
     return subtree_mutation(ind, n_features, config, rng)
