@@ -1,0 +1,226 @@
+% =============================================================================
+\section{Implementação}
+\label{sec:implementacao}
+
+% -----------------------------------------------------------------------------
+\subsection{Representação dos Indivíduos (Genótipo)}
+\label{sec:impl_representacao}
+
+Os indivíduos são estruturados como árvores sintáticas recursivas através da
+classe \code{Node(value, children)}, encapsuladas na entidade
+\code{Individual}. O genótipo é composto por:
+
+\begin{itemize}
+  \item \textbf{Nós Terminais ($\mathcal{T}$):} constituídos pelas variáveis
+        do problema ($x_0, x_1, \dots, x_{d-1}$) e por Constantes Efêmeras
+        Aleatórias (ERC). Quando uma folha é sorteada, uma constante é
+        gerada com probabilidade $p_{\text{const}} = 0.3$, amostrada
+        uniformemente no intervalo $[-1.0, 1.0]$.
+  \item \textbf{Nós Internos / Funções ($\mathcal{F}$):} aplicam operações
+        aritméticas ou não-lineares aos nós filhos.
+  \item \textbf{Forma Canônica:} cada indivíduo gera uma assinatura
+        algébrica canônica normalizada (\code{canonical\_}\allowbreak\code{repr()}), que comuta operandos
+        em nós simétricos (ex.: $x_0 + x_1 \equiv x_1 + x_0$), viabilizando a
+        detecção exata de clones sintáticos na população.
+\end{itemize}
+
+\paragraph{Critério de Limite de Tamanho.}
+O enunciado especifica o ``tamanho máximo do indivíduo igual a~7''.
+Adotou-se \textbf{profundidade máxima 7} (na qual uma folha isolada possui
+profundidade~1 e a raiz com filhos tem profundidade $1 + \max(d_i)$). Em
+árvores estritamente binárias, esse teto comporta até $2^7 - 1 = 127$ nós.
+Qualquer operador que gere descendentes com profundidade $>7$ tem a operação
+rejeitada e reamostrada (até 20 tentativas); caso o limite persista em ser
+violado, o pai original é preservado por reprodução.
+
+% -----------------------------------------------------------------------------
+\subsection{Função de Avaliação (Fitness) e Desacoplamento Numérico}
+\label{sec:impl_fitness}
+
+A aptidão básica a ser minimizada é a Raiz do Erro Quadrático Médio (RMSE):
+\begin{equation}
+  f(\mathit{Ind}) = \sqrt{\frac{1}{N}\sum_{i=1}^{N}\big(\mathrm{Eval}(\mathit{Ind},\mathbf{x}_i)-y_i\big)^2 },
+  \label{eq:rmse}
+\end{equation}
+em que $\mathbf{x}_i$ é a $i$-ésima linha da matriz $X \in \mathbb{R}^{N \times d}$
+e $y_i$ é o valor alvo correspondente. A avaliação é totalmente vetorizada: a
+árvore executa diretamente sobre arrays NumPy em uma única passada. Quaisquer
+ocorrências de indefinições numéricas (\code{NaN} ou \code{Inf}) são
+interceptadas e penalizadas com aptidão de $10^{12}$.
+
+\paragraph{Escalonamento Linear Ótimo (\emph{Linear Scaling}).}
+Em problemas numéricos contínuos, forçar a árvore a buscar simultaneamente a
+forma funcional $g(X)$ e a escala/deslocamento dos dados cria barreiras severas
+na paisagem de busca. Para contornar essa dificuldade, implementou-se o
+\emph{Linear Scaling}~\cite{keijzer2003improving}. A resposta ajustada é dada
+por $\hat{y} = \alpha + \beta g(X)$, em que os coeficientes ótimos são
+resolvidos analiticamente por Mínimos Quadrados Ordinários (OLS) em tempo
+$\mathcal{O}(N)$ sobre o conjunto de treino:
+\begin{equation}
+  \beta = \frac{\sum_{i=1}^{N} (y_i - \bar{y})(g_i - \bar{g})}{\sum_{i=1}^{N} (g_i - \bar{g})^2},
+  \qquad \alpha = \bar{y} - \beta\,\bar{g}.
+  \label{eq:ls}
+\end{equation}
+Caso a variância de $g(X)$ seja nula ($\sum (g_i-\bar{g})^2 < 10^{-12}$), fixa-se
+$\beta = 0$ e $\alpha = \bar{y}$. No conjunto de teste, a expressão é avaliada
+utilizando exatamente os valores de $\alpha$ e $\beta$ congelados durante o
+treino.
+
+% -----------------------------------------------------------------------------
+\subsection{Conjunto de Primitivas e Tratamento de Descontinuidades}
+\label{sec:impl_primitivas}
+
+O conjunto padrão da Fase~1 utiliza $\mathcal{F}_{\text{canônico}} = \{ +, -, \times, \div \}$,
+com a \textbf{divisão protegida de Koza}~\cite{koza1992genetic}:
+\begin{equation}
+  \mathrm{div}(a,b) =
+  \begin{cases}
+    1.0, & |b| < 10^{-6},\\
+    a/b, & \text{caso contrário.}
+  \end{cases}
+  \label{eq:div}
+\end{equation}
+Conforme demonstrado adiante nos experimentos, essa formulação clássica
+introduz falésias artificiais quando $10^{-6} < |b| \ll 1$, gerando polos
+assintóticos fora da amostra de treino. Para solucionar essa deficiência na
+Fase~2, implementou-se o \textbf{\emph{Analytic Quotient} (AQ)}~\cite{ni2013analytic}:
+\begin{equation}
+  \mathrm{aq}(a,b) = \frac{a}{\sqrt{1 + b^2}},
+  \label{eq:aq}
+\end{equation}
+que é infinitamente diferenciável e contínuo em todo o $\mathbb{R}^2$,
+eliminando assíntotas verticais. Para problemas com dinâmicas não-lineares
+complexas e respostas amortecidas, foram também disponibilizadas primitivas
+unárias protegidas: $\log(|a| + 10^{-6})$, $\sqrt{|a|}$ e $\exp(a)$ (com corte
+em $[-50, 50]$ para prevenir \emph{overflow}).
+
+% -----------------------------------------------------------------------------
+\subsection{População Inicial}
+\label{sec:impl_init}
+
+Foram implementados três métodos clássicos de geração:
+\begin{enumerate}
+  \item \textbf{\emph{Full}:} nós internos são sorteados até a profundidade
+        alvo $d$, gerando árvores perfeitamente simétricas com folhas na
+        profundidade máxima.
+  \item \textbf{\emph{Grow}:} nós internos e folhas são sorteados com igual
+        probabilidade desde a raiz, gerando topologias assimétricas e de
+        tamanhos variados.
+  \item \textbf{\emph{Ramped Half-and-Half} (Padrão adotado):} a população é
+        particionada equitativamente entre as profundidades $d \in \{1, \dots, \text{max\_size}\}$.
+        Em cada faixa, $50\%$ dos indivíduos são gerados via \emph{full} e
+        $50\%$ via \emph{grow}. Esse mecanismo produz árvores com tamanho
+        médio inicial de $26.2$ nós e profusão de material genético (cerca
+        de $89.5\%$ a $95.1\%$ de indivíduos únicos na geração~0).
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\subsection{Operadores Genéticos de Variação}
+\label{sec:impl_operadores}
+
+A cada geração, o processo de reprodução opera em pares sobre cópias imutáveis
+dos progenitores:
+\begin{itemize}
+  \item \textbf{\emph{Crossover} de Subárvore:} seleciona um ponto de corte em
+        cada progenitor e permuta as subárvores correspondentes. Para evitar
+        trocas triviais entre folhas, adota-se uma probabilidade de $90\%$ de
+        sortear nós internos e $10\%$ para terminais.
+  \item \textbf{Mutação de Subárvore:} sorteia um nó aleatório da árvore e o
+        substitui por uma nova subárvore gerada pelo algoritmo \emph{grow}.
+  \item \textbf{Mutação Pontual:} substitui uma função por outra de mesma
+        aridade ou altera uma variável/constante, mantendo intacta a estrutura.
+  \item \textbf{Mutação Mista (\emph{Mixed}):} introduzida na Fase~2 para
+        suavizar a paisagem epistática, sorteia entre três modalidades:
+        (i)~$35\%$ de perturbação gaussiana direta sobre constantes ERC
+        ($c \leftarrow c + \mathcal{N}(0, \sigma^2)$, com $\sigma = 0.25\max(1, |c|)$);
+        (ii)~$35\%$ de mutação pontual; e (iii)~$30\%$ de micro-subárvore
+        \emph{grow}.
+\end{itemize}
+No fluxo geracional padrão, com probabilidade $\pc$ aplica-se o \emph{crossover}
+(ou clonagem dos pais caso contrário) e, em seguida, cada descendente gerado
+está sujeito à mutação com probabilidade $\pmut$.
+
+% -----------------------------------------------------------------------------
+\subsection{Mecanismos de Seleção, Elitismo e Controle de Bloat}
+\label{sec:impl_selecao}
+
+O arcabouço disponibiliza três paradigmas de seleção:
+
+\paragraph{1. Seleção por Roleta (Proporcional à Aptidão).}
+A seleção por roleta requer valores positivos proporcionais à qualidade a serem
+maximizados. Como o RMSE é uma métrica de custo (minimização), converte-se o
+erro em uma aptidão estritamente decrescente $\phi_i = 1 / (1 + \mathrm{RMSE}_i)$.
+Dessa forma, indivíduos com menor erro recebem fatias proporcionalmente maiores
+na roleta (por exemplo, um indivíduo perfeito com $\mathrm{RMSE}=0$ obtém
+$\phi=1.0$, enquanto um com $\mathrm{RMSE}=99$ recebe apenas $\phi=0.01$). A
+probabilidade de seleção do indivíduo $i$ em uma população de tamanho $P$ é:
+\begin{equation}
+  p_i = \frac{\phi_i}{\sum_{j=1}^{P} \phi_j}.
+\end{equation}
+Quando a média dos erros populacionais é elevada, as diferenças relativas
+entre $1/(1+\text{RMSE})$ tornam-se insignificantes, reduzindo a pressão
+seletiva.
+
+\paragraph{2. Seleção por Torneio.}
+Amostram-se aleatoriamente $k$ indivíduos com reposição e seleciona-se aquele
+com o menor RMSE. O parâmetro $k$ regula diretamente a intensidade da pressão
+seletiva ($k=2$ é o padrão e $k=3$ impõe maior rigor).
+
+\paragraph{3. Seleção $\eps$-Lexicase (MAD).}
+Diferente dos métodos escalares, a seleção lexicase~\cite{helmuth2015lexicase}
+trabalha diretamente com a matriz de erros individuais $E \in \mathbb{R}^{P \times N}$,
+em que $e_t(i) = |\mathrm{Eval}(\mathit{Ind}_i, \mathbf{x}_t) - y_t|$. O algoritmo
+executa os seguintes passos para selecionar cada progenitor:
+\begin{enumerate}
+  \item O conjunto de candidatos sobreviventes inicia com toda a população
+        ($C = \{1, \dots, P\}$) e os $N$ casos de treino são embaralhados
+        aleatoriamente.
+  \item Para o caso $t$, calcula-se o menor erro entre os candidatos atuais:
+        $e^*_t = \min_{i \in C} e_t(i)$.
+  \item Na variante $\eps$-lexicase para regressão~\cite{lacava2016epsilon},
+        sobrevivem ao caso $t$ todos os indivíduos cujo erro satisfaça:
+        \begin{equation}
+          e_t(i) \le e^*_t + \lambda(e_t),
+          \label{eq:eps_lexicase}
+        \end{equation}
+        onde o limiar adaptativo $\lambda(e_t)$ é o Desvio Absoluto Mediano
+        (MAD) dos erros dos candidatos no caso $t$:
+        \begin{equation}
+          \lambda(e_t) = \operatorname{mediana}_{j \in C}\Big(\big|e_t(j) - \operatorname{mediana}_{k \in C}(e_t(k))\big|\Big).
+        \end{equation}
+  \item O processo itera sequencialmente pelos casos. Se $|C| = 1$, o indivíduo
+        remanescente é retornado imediatamente. Se os $N$ casos forem
+        esgotados com múltiplos sobreviventes, sorteia-se um deles
+        uniformemente.
+\end{enumerate}
+Esse mecanismo preserva linhagens que se destacam em subconjuntos distintos
+de dados, evitando que soluções com erro médio medíocre, mas cruciais em
+casos raros, sejam prematuramente eliminadas.
+
+\paragraph{Elitismo e Desempate Parcimonioso.}
+O arcabouço implementa elitismo (\code{elite\_size=1}) preservando o melhor
+indivíduo absoluto de treino. Em caso de empate de aptidão dentro de uma
+tolerância relativa de $10^{-6}$, o desempate prioriza a árvore com menor
+número total de nós.
+
+\paragraph{Pressão de Parcimônia Lexicográfica (\emph{Bloat Control}).}
+Inspirado em \citet{luke2002lexicographic}, implementou-se um desempate
+anti-inchaço na seleção: quando a $\eps$-lexicase atinge $\le 4$ candidatos
+finais após avaliar ao menos $25\%$ dos casos de treino, escolhe-se o
+indivíduo com menor tamanho em nós dentre aqueles cuja aptidão global esteja
+dentro de $5\%$ do melhor candidato.
+
+\paragraph{Rejeição de Duplicatas (\code{dedup\_offspring}).}
+Para impedir que clones inertes ocupem vagas na nova geração, cada descendente
+tem sua forma canônica confrontada com as já aceitas na geração atual; caso já
+exista indivíduo idêntico, o descendente sofre mutação obrigatória (até 3
+tentativas) antes da inserção.
+
+% -----------------------------------------------------------------------------
+\subsection{Coleta Estatística e Verificação de Software}
+\label{sec:impl_testes}
+
+Em todas as gerações, o módulo \code{stats.py} registra: erro mínimo, médio,
+máximo e desvio-padrão; contagem de indivíduos únicos e repetidos; número de
+filhos de crossover melhores e piores que a média e que o melhor pai; eficácia
+das mutações; e tamanho médio, máximo e profundidade média da população.

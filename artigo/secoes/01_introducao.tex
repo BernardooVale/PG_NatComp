@@ -1,0 +1,59 @@
+% =============================================================================
+\section{Introdução}
+\label{sec:introducao}
+
+A regressão simbólica consiste em encontrar, a partir de $m$ amostras
+$\langle X, Y\rangle$ com $X\in\mathbb{R}^{m\times n}$ e $Y\in\mathbb{R}^{m}$,
+uma \emph{expressão} que aproxime a função desconhecida
+$f:\mathbb{R}^n\to\mathbb{R}$. Ao contrário da regressão paramétrica
+tradicional, não se fixa \emph{a priori} a forma do modelo: a estrutura e os
+coeficientes são buscados simultaneamente. A Programação Genética
+(PG)~\cite{koza1992genetic,poli2008field} é a técnica clássica para esse
+problema, evoluindo populações de árvores sintáticas por seleção, cruzamento e
+mutação.
+
+O desempenho de uma PG depende de um grande número de decisões de projeto e
+de parâmetros que interagem entre si. Este trabalho tem três objetivos:
+(i)~implementar do zero os componentes de um arcabouço de PG para regressão
+simbólica; (ii)~analisar a sensibilidade do algoritmo aos seus parâmetros
+(população, gerações, seleção, operadores, elitismo e controle de tamanho);
+e (iii)~avaliar as soluções de forma rigorosa, separando treino e teste,
+usando 30 repetições independentes e testes estatísticos não paramétricos.
+
+A investigação foi organizada em \textbf{duas fases}:
+
+\begin{description}
+  \item[Fase~1 --- estudo canônico.] Responde às questões do enunciado
+        seguindo o guia experimental proposto: escolha de população e
+        gerações, troca do método de seleção, variação de $\pc$ e $\pmut$,
+        retirada do elitismo e medição do \emph{bloating}. Os melhores
+        parâmetros encontrados no \code{synth1} são replicados no
+        \code{synth2} e no \code{concrete1}.
+  \item[Fase~2 --- estudo guiado pela \emph{fitness landscape}.] Os sintomas
+        observados na Fase~1 (explosões no teste, subajuste, clones,
+        crescimento das árvores, crossover destrutivo) são interpretados
+        como propriedades da paisagem de aptidão, gerando seis hipóteses de
+        melhoria. Cada hipótese é testada isoladamente e, depois, empilhada
+        de forma auditável. Os resultados são cruzados com as perguntas da
+        Fase~1 para verificar como cada intervenção altera convergência,
+        diversidade, contribuição dos operadores, \emph{bloating} e
+        sobreajuste.
+\end{description}
+
+As principais contribuições são: (a)~um arcabouço configurável e reprodutível
+de PG com seleção por roleta, torneio e $\eps$-lexicase; (b)~um estudo
+paramétrico completo com análise estatística; (c)~uma cadeia auditável
+\emph{dado observado $\to$ hipótese sobre a paisagem $\to$ intervenção $\to$
+veredito estatístico}; e (d)~a identificação da melhor configuração para cada
+base e de uma configuração global de compromisso, com a justificativa de
+\emph{por que} cada uma funciona.
+
+O restante do artigo está estruturado conforme as diretrizes do trabalho:
+a \cref{sec:implementacao} detalha a implementação completa do arcabouço,
+incluindo representação em árvore, função de aptidão, operadores genéticos,
+mecanismos de seleção ($\eps$-lexicase, torneio e roleta) e controle de
+\emph{bloat}; a \cref{sec:experimentos} concentra a análise experimental do
+impacto dos parâmetros, articulada na metodologia, no estudo canônico da
+Fase~1, no aprofundamento orientado pela \emph{fitness landscape} da Fase~2, no
+cruzamento de resultados e na eleição dos melhores modelos; e a
+\cref{sec:conclusao} conclui o documento com as considerações finais.

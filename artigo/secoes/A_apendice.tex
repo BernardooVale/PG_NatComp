@@ -1,0 +1,144 @@
+% =============================================================================
+\section{Expressões Simbólicas Representativas da Fase 1 e da Fase 2}
+\label{app:expressoes}
+
+Abaixo são documentadas as expressões simbólicas representativas (melhor indivíduo
+e indivíduo mediano) obtidas nas três bases de dados, confrontando o comportamento
+do Baseline da Fase~1 com as soluções aperfeiçoadas da Fase~2.
+
+% -----------------------------------------------------------------------------
+\subsection{Fase 1 (Baseline: Torneio $k=2$, Sem Bloat Control, Koza div)}
+
+\subsubsection{Base \code{synth1}}
+\begin{itemize}
+  \item \textbf{Melhor indivíduo (Semente 13):}
+        $\text{RMSE}_{\text{teste}} = 0.4613$, $\text{RMSE}_{\text{treino}} = 1.5518$, tamanho: 35 nós.
+\begin{lstlisting}
+(((((x0 * x0) + (0.473 - x0)) * (x0 * x0)) + (-0.128 * x0)) +
+ ((((-0.9725 - x1) + ((0.473 - x0) + (0.473 - x0))) +
+   ((-0.128 * x0) + x0)) + x0))
+\end{lstlisting}
+  \item \textbf{Indivíduo mediano (Semente 20):}
+        $\text{RMSE}_{\text{teste}} = 5.8954$, $\text{RMSE}_{\text{treino}} = 4.0746$, tamanho: 49 nós.
+\begin{lstlisting}
+(((((-0.2326 - 0.651) - ((x0 * -0.8602) - -0.08589)) +
+   ((x0 * (-0.08589 * x0)) * (x0 * (x0 / -0.2326)))) -
+  (x0 * ((x0 / -0.2326) * (-0.08589 * x0)))) +
+ (((x0 / -0.2326) + (-0.08589 * -0.2326)) -
+  (x0 * ((x0 / -0.2326) - (-0.08589 * x0)))))
+\end{lstlisting}
+\end{itemize}
+
+\subsubsection{Base \code{synth2}}
+\begin{itemize}
+  \item \textbf{Melhor indivíduo (Semente 9):}
+        $\text{RMSE}_{\text{teste}} = 1.3875$, $\text{RMSE}_{\text{treino}} = 1.3553$, tamanho: 41 nós.
+\begin{lstlisting}
+(((x1 - (x1 / ((x0 + x1) * (x0 - x0)))) -
+  (((x0 / (x0 - x0)) / (x0 - x0)) + (x0 / x0))) *
+ (((x0 / (x0 + x1)) / (x0 - x0)) * (x0 + (-0.885 / 0.3098))))
+\end{lstlisting}
+  Observe a proliferação explícita de subexpressões do tipo $(x_0 - x_0)$ no
+  denominador, explorando a descontinuidade da divisão protegida.
+  \item \textbf{Indivíduo mediano (Semente 29):}
+        $\text{RMSE}_{\text{teste}} = 3.5278$, $\text{RMSE}_{\text{treino}} = 3.1503$, tamanho: 39 nós.
+\begin{lstlisting}
+((((x1 * x0) * 0.149) *
+  ((((0.6508 * x0) / x0) * ((0.6508 * 0.149) * (0.6508 * x0))) * x1)) *
+ ((((x1 * x0) * (0.6508 * 0.149)) *
+   ((0.6508 * (x1 * x0)) * 0.149)) * 0.149))
+\end{lstlisting}
+\end{itemize}
+
+\subsubsection{Base \code{concrete1} (Fase 1 Normalizada)}
+\begin{itemize}
+  \item \textbf{Melhor indivíduo (Semente 26):}
+        $\text{RMSE}_{\text{teste}} = 10.1827$, $\text{RMSE}_{\text{treino}} = 10.3052$, tamanho: 103 nós.
+\begin{lstlisting}
+((((((0.5532 / 0.3266) * (-0.2286 + x4)) - (-0.6117 * (x7 + x0))) +
+   (((x7 + x0) + (x1 + x1)) + ((x7 + x0) + (0.9384 / 0.1795)))) +
+  (((0.5532 / 0.3266) / (0.8346 + (0.6431 / -0.8349))) +
+   (((0.5532 / 0.3266) + (x7 + x0)) + (-0.2487 * 0.1795)))) -
+ (((((0.5532 / 0.3266) + (0.5532 / 0.3266)) /
+    ((0.5532 / 0.3266) + (x7 + x1))) -
+   (((x7 + x1) + (0.9936 + x4)) + (0.9384 / 0.1795))) -
+  ((((0.5532 / 0.3266) * (0.9936 + x4)) - (x3 * (0.5532 / 0.3266))) +
+   (x0 * ((x1 + x1) + (0.9384 / 0.1795))))))
+\end{lstlisting}
+  Note o termo recorrente $(0.5532 / 0.3266) \approx 1.6938$ replicado sete
+  vezes pela árvore, numa tentativa rudimentar de sintetizar coeficientes
+  multiplicativos maiores que 1.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\subsection{Fase 2 (Modelos Aperfeiçoados: Lexicase, Dedup, Parcimônia, AQ, OLS)}
+
+\subsubsection{Base \code{synth1} (\cfg{Stack~A2})}
+\begin{itemize}
+  \item \textbf{Melhor indivíduo (Semente 0):}
+        $\text{RMSE}_{\text{teste}} = \mathbf{0.000576}$, $\text{RMSE}_{\text{treino}} = 0.000505$, tamanho: 27 nós.
+\begin{lstlisting}
+(((((0.2501 * x1) * x1) + (((0.2501 * x1) * x1) - x1)) +
+  ((x0 * x0) * (x0 * x0))) - (x0 * (x0 * x0)))
+\end{lstlisting}
+  Esta expressão simplifica algebricamente para $\hat{y} = x_0^4 - x_0^3 + 0.5002 x_1^2 - x_1$,
+  recuperando de forma exata a função geradora da base.
+  \item \textbf{Indivíduo mediano (Semente 6):}
+        $\text{RMSE}_{\text{teste}} = 0.1150$, $\text{RMSE}_{\text{treino}} = 0.1385$, tamanho: 43 nós.
+\begin{lstlisting}
+(((((-0.3279 / (0.8027 / -1.136)) * x1) * (x1 - 0.7167)) -
+   ((-0.4276 / (0.8027 / -1.203)) * x1)) -
+ (((((x0 + x0) + 0.9353) * (-1.044 * 0.2398)) + (x0 * x0)) *
+  ((x1 - x1) - (x0 * (x0 + -0.5191)))))
+\end{lstlisting}
+\end{itemize}
+
+\subsubsection{Base \code{synth2} (\cfg{Stack~B3} --- Modelo Global)}
+\begin{itemize}
+  \item \textbf{Melhor indivíduo (Semente 20):}
+        $\text{RMSE}_{\text{teste}} = \mathbf{1.2842}$, $\text{RMSE}_{\text{treino}} = 1.2501$, tamanho: 65 nós.
+        (Esta semente explodia para $415.26$ na Fase~1 sob a divisão de Koza;
+        com AQ e Linear Scaling, tornou-se a melhor solução global).
+\begin{lstlisting}
+(9.176 + -2.957 * aq((x0 + (x1 - (0.3096 * (x0 * x1)))),
+  ((((0.4296 * (0.1015 + x1)) - ((x1 * 0.4896) * aq(x1, x1))) *
+    (aq(aq(x0, x1), (x0 - x1)) - aq(0.8549, (-0.7003 + x1)))) *
+   ((aq(x1, aq(-0.1964, x0)) - (aq(x0, -0.02018) * (0.1015 + x1))) -
+    ((0.3096 * (x0 * x1)) * (aq(x1, x1) - (x1 + 0.3874)))))))
+\end{lstlisting}
+  \item \textbf{Indivíduo mediano (Semente 1):}
+        $\text{RMSE}_{\text{teste}} = 1.4349$, $\text{RMSE}_{\text{treino}} = 1.2954$, tamanho: 117 nós.
+\begin{lstlisting}
+(7.015 + 1.289 * ((((aq((x1 * x0), (x1 + x1)) -
+   ((x1 + x1) - (x0 * x1))) + (((x1 - x0) - (x1 + -0.7128)) -
+   ((x0 + x1) + (x0 - x1)))) - aq(aq((aq(-0.8835, x0) - 0.5696),
+   aq((x1 - x0), (x0 + x1))), ((0.0357 - x0) +
+   aq((x0 * x1), aq(x0, -0.2978))))) +
+  (aq(aq(((x1 * x1) + aq(x0, -0.5127)), ((x1 - -0.2411) +
+   aq(-0.7389, x0))), aq(((-0.5452 - x1) + aq(x0, x0)), (0.1115 - x0))) *
+   (aq(((x0 - x0) + aq(x0, x0)), ((x1 * x1) - aq(-0.8868, x0))) +
+   (aq((x1 * -0.2595), aq(-0.6582, x0)) + (aq(-0.2518, x0) - aq(0.3203, x1)))))))
+\end{lstlisting}
+\end{itemize}
+
+\subsubsection{Base \code{concrete1} (\cfg{Stack~B4})}
+\begin{itemize}
+  \item \textbf{Melhor indivíduo (Semente 25):}
+        $\text{RMSE}_{\text{teste}} = \mathbf{6.7621}$, $\text{RMSE}_{\text{treino}} = 6.9885$, tamanho: 45 nós.
+\begin{lstlisting}
+(22.42 + 4.323 * (((sqrt(((-0.7425 - x1) + log(x6))) +
+   exp(sqrt(aq(1.155, x4)))) + aq((exp(0.4671) + (x1 + x0)),
+   log((-0.7425 - x7)))) + ((((x1 + x0) + (x2 - x3)) +
+   (log((-0.7425 - x7)) + log((-0.7425 - x7)))) + x0)))
+\end{lstlisting}
+  \item \textbf{Indivíduo mediano (Semente 16):}
+        $\text{RMSE}_{\text{teste}} = 7.6128$, $\text{RMSE}_{\text{treino}} = 7.4868$, tamanho: 28 nós.
+\begin{lstlisting}
+(32.43 + 6.264 * ((((-0.1883 - x3) + log(sqrt((x7 - -0.6851)))) -
+   log(log(sqrt((x7 - -0.6323))))) + (x0 + (x1 +
+   aq((aq(x0, x3) + 1.105), x4)))))
+\end{lstlisting}
+  Note a drástica redução dimensional: enquanto na Fase~1 a árvore da melhor
+  semente requeria 103 nós ($R^2 \approx 0.46$), a Fase~2 atinge $R^2 = 0.78$
+  com apenas 28 a 45 nós, empregando transformações sublineares compactas.
+\end{itemize}

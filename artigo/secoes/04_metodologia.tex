@@ -1,0 +1,78 @@
+% =============================================================================
+\subsection{Metodologia Experimental e Protocolo}
+\label{sec:metodologia}
+
+\subsubsection{Bases de dados}
+
+As três bases (\cref{tab:bases}) são fornecidas já divididas em treino e
+teste, com a saída $y$ na última coluna. O treino é usado para evoluir as
+soluções e o teste é usado \emph{apenas} ao final, para avaliar o melhor
+indivíduo de cada execução. As bases sintéticas possuem duas variáveis de
+entrada ($x_0, x_1$); a base \code{concrete1} representa um problema de
+dados empíricos multivariados com oito atributos contínuos ($x_0, \dots, x_7$),
+totalizando 1030 observações particionadas em 824 amostras de treino e 206
+de teste, cuja variável alvo $y$ apresenta magnitude média substancialmente
+mais elevada ($\bar{y} \approx 35.76$ e $\sigma_y \approx 16.27$).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Bases de dados utilizadas. $\sigma_y$ é o desvio-padrão da saída no
+           conjunto de teste, usado como referência de escala do RMSE.}
+  \label{tab:bases}
+  \small
+  \begin{tabular}{@{}lcccccl@{}}
+    \toprule
+    Base & Entradas & Treino & Teste & $\bar{y}_{\text{teste}}$ & $\sigma_{y,\text{teste}}$ & Tipo \\
+    \midrule
+    \code{synth1}    & 2 & 60  & 600  & 17.75 & 25.89 & Sintética (polinomial) \\
+    \code{synth2}    & 2 & 300 & 1000 & 0.36  & 4.03  & Sintética (racional) \\
+    \code{concrete1} & 8 & 824 & 206  & 35.76 & 16.27 & Empírica / Real \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Para facilitar a comparação entre bases, também se reporta o coeficiente de
+determinação no teste, $R^2 = 1-\mathrm{RMSE}^2/\sigma_{y}^2$.
+
+\subsubsection{Protocolo Experimental e Métricas}
+
+\begin{itemize}
+  \item \textbf{Repetições:} cada configuração foi executada 30 vezes com as
+        sementes $0,\dots,29$. Como as mesmas sementes são usadas em todas as
+        configurações, as amostras podem ser pareadas por semente.
+  \item \textbf{Medidas:} RMSE de treino e de teste do melhor indivíduo
+        (média $\pm$ desvio-padrão, mediana, intervalo interquartil (IQR),
+        mínimo e máximo), tamanho do melhor indivíduo (nós) e tempo de
+        execução. Como as distribuições de RMSE são fortemente assimétricas,
+        com caudas longas, a \textbf{mediana} é a medida central privilegiada
+        na discussão.
+  \item \textbf{Testes estatísticos:} teste U de
+        Mann--Whitney~\cite{mann1947test} (bilateral, $\alpha=0.05$) para
+        comparar configurações; na Fase~2 também o teste de postos sinalizados
+        de Wilcoxon~\cite{wilcoxon1945individual}, pareado por semente, e a
+        contagem de vitórias/derrotas (W/L) por semente.
+  \item \textbf{Um fator por vez:} ao variar um parâmetro, todos os demais
+        são mantidos constantes.
+\end{itemize}
+
+\subsubsection{Organização das Duas Fases Experimentais}
+
+\begin{description}
+  \item[Fase~1] (\cref{sec:fase1}). Configuração base, conforme o guia do
+        enunciado: \code{pop}=100, \code{gen}=100, profundidade máxima 7,
+        \emph{ramped half-and-half}, torneio com $k=2$, $\pc=0.9$,
+        $\pmut=0.05$, mutação de subárvore, elitismo com 1 indivíduo e
+        $\mathcal{F}=\{+,-,\times,\div\}$. O estudo é feito no \code{synth1},
+        e a configuração resultante é replicada no \code{synth2} e no
+        \code{concrete1}. Ao todo, foram 22 configurações $\times$ 30
+        execuções.
+  \item[Fase~2] (\cref{sec:fase2}). Parte de um \emph{estado atual}
+        (\cfg{S0}), igual à configuração base, mas com $\eps$-lexicase (o
+        vencedor da Fase~1), avaliado nas três bases. Seis hipóteses (H1--H6)
+        são testadas \textbf{isoladamente} contra \cfg{S0} e, em seguida,
+        \textbf{empilhadas} em duas ``escadas'' cumulativas (A e B). Todas
+        as 14 configurações foram executadas nas três bases
+        ($14\times3\times30 = 1260$ execuções), o que permite avaliar também
+        o efeito de cada intervenção nas bases para as quais ela
+        \emph{não} foi concebida.
+\end{description}

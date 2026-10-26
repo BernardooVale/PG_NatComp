@@ -1,0 +1,100 @@
+% =============================================================================
+%  Programação Genética para Regressão Simbólica:
+%  um estudo em duas fases guiado por análise de fitness landscape
+%
+%  Compilação:  pdflatex main -> bibtex main -> pdflatex main -> pdflatex main
+%               (ou: latexmk -pdf main.tex | tectonic main.tex | Overleaf)
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+% ----------------------------------------------------------------- Idioma/fonte
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% ----------------------------------------------------------------- Layout
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{setspace}
+\setstretch{1.08}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=4pt}
+
+% ----------------------------------------------------------------- Matemática
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={.},group-separator={}}
+
+% ----------------------------------------------------------------- Tabelas/figuras
+\usepackage{graphicx}
+\graphicspath{{figuras/}}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage[table]{xcolor}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\captionsetup{font=small,labelfont=bf,justification=justified}
+\usepackage{threeparttable}
+
+% ----------------------------------------------------------------- Código/algoritmos
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,columns=fullflexible,
+        frame=single,framerule=0.3pt,backgroundcolor=\color{gray!6}}
+\usepackage[ruled,vlined,linesnumbered,portuguese]{algorithm2e}
+
+% ----------------------------------------------------------------- Referências
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink,noabbrev,brazilian]{cleveref}
+\crefname{table}{tabela}{tabelas}
+\Crefname{table}{Tabela}{Tabelas}
+\crefname{figure}{figura}{figuras}
+\Crefname{figure}{Figura}{Figuras}
+\crefname{section}{seção}{seções}
+\Crefname{section}{Seção}{Seções}
+
+% ----------------------------------------------------------------- Macros
+\newcommand{\cfg}[1]{\textsf{#1}}                  % nome de configuração
+\newcommand{\code}[1]{\texttt{#1}}                 % identificador de código
+\newcommand{\pc}{p_c}
+\newcommand{\pmut}{p_m}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\best}[1]{\textbf{#1}}
+\newcommand{\pmval}[2]{$#1 \pm #2$}
+\definecolor{verde}{RGB}{226,240,217}
+\definecolor{vermelho}{RGB}{248,215,213}
+\definecolor{amarelo}{RGB}{255,242,204}
+
+% ----------------------------------------------------------------- Metadados
+\title{\textbf{Programação Genética para Regressão Simbólica:\\
+       um estudo experimental em duas fases guiado pela\\
+       análise da \emph{fitness landscape}}}
+\author{%
+  Bernardo Vale dos Santos Bento - 2023002065 \\[2pt]
+  \small Departamento de Ciência da Computação --- Universidade Federal de Minas Gerais\\
+}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\input{secoes/00_resumo}
+
+\input{secoes/01_introducao}
+\input{secoes/02_implementacao}
+\input{secoes/03_experimentos}
+\input{secoes/04_conclusoes}
+
+\appendix
+\input{secoes/A_apendice}
+
+\bibliographystyle{plainnat}
+\bibliography{referencias}
+
+\end{document}

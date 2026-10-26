@@ -1,0 +1,49 @@
+% =============================================================================
+\section{Conclusões}
+\label{sec:conclusoes}
+\label{sec:conclusao}
+
+Este trabalho documentou a concepção, o desenvolvimento a partir do zero e a
+análise empírica rigorosa de um arcabouço completo de Programação Genética para
+Regressão Simbólica. A investigação foi orientada pelas diretrizes da
+disciplina e articulada em duas fases complementares.
+
+Na \textbf{Fase~1}, a exploração paramétrica canônica sobre três bases
+(\code{synth1}, \code{synth2} e \code{concrete1}) demonstrou que o método de
+seleção é o fator de maior impacto estrutural: a $\eps$-lexicase superou
+expressivamente o torneio e a roleta ($p = 4.12\times10^{-6}$). Em
+contrapartida, a replicação expôs três patologias severas da abordagem
+clássica: explosões assintóticas de divisão fora da amostra no \code{synth2}
+($415.3$ de erro máximo), subajuste por barreira de escala no \code{concrete1}
+($R^2 \approx 0.44$), altas taxas de operadores destrutivos ($>88\%$ dos
+cruzamentos degradando o melhor progenitor) e inchaço de árvores com
+acúmulo de código neutro.
+
+Na \textbf{Fase~2}, a interpretação desses sintomas sob a ótica da
+\emph{fitness landscape} orientou a formulação de seis hipóteses mecanicistas
+(H1--H6), validadas por ablação isolada e por empilhamento cumulativo em 1.260
+execuções adicionais. As conclusões consolidadas incluem:
+\begin{enumerate}
+  \item A validação do \textbf{Analytic Quotient (AQ)} como substituto
+        definitivo da divisão protegida clássica, eliminando 100\% das
+        singularidades fora da amostra no \code{synth2} (queda de erro de
+        $93.9\%$);
+  \item A comprovação de que o \textbf{Linear Scaling} por mínimos quadrados
+        desacopla a busca funcional da barreira de amplitude numérica,
+        elevando o $R^2$ do \code{concrete1} para $0.78$ com $30/30$ vitórias
+        sobre o estado inicial;
+  \item A demonstração de que a combinação de \textbf{rejeição de duplicatas},
+        \textbf{parcimônia lexicográfica} e \textbf{mutação mista} restringe
+        o \emph{bloat} em até $42\%$ e destrava a busca em problemas
+        polinomiais, recuperando com exatidão matemática a equação alvo no
+        \code{synth1} com RMSE de $0.0006$;
+  \item A caracterização do modelo \textbf{\cfg{Stack~B3}} como a recomendação
+        ótima global de compromisso, apresentando liderança em posto médio
+        geral e ganhos substanciais de generalização em todos os cenários.
+\end{enumerate}
+
+Como trabalhos futuros, sugere-se a incorporação de amostragem adaptativa
+de casos de treino (\emph{Down-sampled Lexicase}), a otimização contínua de
+constantes por algoritmos baseados em gradiente (ex.: BFGS ou Levenberg-Marquardt)
+e a integração de restrições de dimensionalidade e análise física via Gramáticas
+Evolutivas (Grammatical Evolution).

@@ -1,0 +1,33 @@
+% =============================================================================
+\begin{abstract}
+\noindent
+Este trabalho apresenta a implementação, a partir do zero, de um arcabouço de
+Programação Genética (PG) com representação em árvore aplicado à regressão
+simbólica em três bases de dados (\code{synth1}, \code{synth2} e
+\code{concrete1}). A investigação foi conduzida em duas fases. Na
+\textbf{Fase~1}, seguindo o roteiro canônico da disciplina, foram estudados o
+tamanho da população e o número de gerações, os métodos de seleção (roleta,
+torneio e $\eps$-lexicase), as probabilidades de cruzamento e mutação, o
+elitismo e o \emph{bloating}, sempre com 30 repetições independentes e testes
+não paramétricos. A $\eps$-lexicase foi o único fator com efeito
+estatisticamente significativo no \code{synth1} (RMSE de teste
+$5.52 \to 1.62$, $p = 4.1\times10^{-6}$), mas a replicação nas demais bases
+expôs três patologias: explosões assintóticas fora da amostra no
+\code{synth2} (RMSE máximo de 415), subajuste estrutural no \code{concrete1}
+($R^2 \approx 0.45$) e crescimento sistemático das árvores. Na
+\textbf{Fase~2}, esses sintomas foram interpretados como propriedades da
+\emph{fitness landscape} (polos, rugosidade epistática, perda de diversidade,
+múltiplas bacias, platôs neutros e barreiras de escala), originando seis
+hipóteses de melhoria (H1--H6) avaliadas por ablação isolada e por
+empilhamento sequencial. O \emph{linear scaling} e o \emph{analytic quotient}
+eliminaram as explosões do \code{synth2} (30/30 vitórias sobre o estado
+anterior) e elevaram o $R^2$ do \code{concrete1} para $0.78$ com árvores
+$42\%$ menores; já a combinação de rejeição de duplicatas, parcimônia
+lexicográfica e mutação mista reduziu a mediana do erro no \code{synth1} de
+$4.28$ (Fase~1) para $0.093$, recuperando a expressão geradora exata em 7 das
+30 execuções. Mostra-se ainda que os efeitos são fortemente dependentes da
+base (o que ajuda uma paisagem atrapalha outra) e propõe-se a melhor
+configuração por base e uma configuração global de compromisso
+(\cfg{Stack~B3}), que supera a Fase~1 nas três bases.
+
+\end{abstract}

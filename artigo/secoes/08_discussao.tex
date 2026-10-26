@@ -1,0 +1,73 @@
+% =============================================================================
+\subsection{Discussão dos Resultados e Ameaças à Validade}
+\label{sec:discussao}
+
+Os resultados obtidos nas duas fases fornecem lições importantes para o
+desenvolvimento de algoritmos de Programação Genética para regressão simbólica,
+tanto sob a ótica teórica quanto prática.
+
+\subsubsection{Implicações para o Projeto de Algoritmos de PG}
+
+\paragraph{1. O papel da seleção baseada em casos ($\eps$-Lexicase):}
+A seleção por torneio e a seleção por roleta agregam o erro em um escalar
+médio (RMSE). Essa compressão destrói a informação sobre o comportamento local
+dos indivíduos nos diferentes pontos do domínio, gerando atratores precoces e
+convergência prematura (como observado pelo pico de 27 clones no torneio).
+A $\eps$-lexicase atua como um mecanismo intrínseco de manutenção de nichos,
+permitindo que candidatos subótimos na média geral sobrevivam enquanto
+forem especialistas em regiões desafiadoras do espaço de entrada. Esse achado
+alinha-se diretamente às descobertas recentes da literatura de
+PG~\cite{helmuth2015lexicase,lacava2016epsilon}.
+
+\paragraph{2. Desacoplamento estrutural vs. numérico (Linear Scaling):}
+Um dos maiores gargalos observados na Fase~1 foi a tentativa inglória da árvore
+de sintetizar constantes numéricas através de longas cadeias aritméticas
+(ex.: $(0.55/0.32) \times \dots$). O \emph{Linear Scaling}~\cite{keijzer2003improving}
+altera fundamentalmente a paisagem: transforma uma busca não-linear conjunta
+por topologia e coeficientes em uma busca estrutural pura pela \emph{forma} da
+função, delegando os graus de liberdade lineares à álgebra clássica de mínimos
+quadrados em tempo $\mathcal{O}(N)$. Esse mecanismo foi o principal
+responsável por destravar a evolução no \code{concrete1} ($R^2$ saltando de
+$0.44 \to 0.78$) e por estabilizar o \code{synth2}.
+
+\paragraph{3. A falácia da divisão protegida clássica:}
+A convenção de Koza~\cite{koza1992genetic} de retornar $1.0$ apenas quando
+$|b| < 10^{-6}$ cria falésias e singularidades assintóticas quando
+$10^{-6} < |b| \ll 1$. Em problemas com distribuição contínua de teste fora
+dos nós de interpolação do treino, essa descontinuidade induz sobreajuste
+severo. A substituição pelo \emph{Analytic Quotient} de \citet{ni2013analytic}
+demonstrou ser uma das intervenções de melhor relação benefício/custo:
+eliminou 100\% das explosões assintóticas sem acrescentar nenhum custo
+computacional mensurável.
+
+\paragraph{4. Recombinação macro vs. exploração micro:}
+A constatação empírica de que cerca de $89\%$ dos crossovers deterioram o
+melhor pai desmistifica a ideia de que o crossover de subárvore atua
+predominantemente recombinando ``blocos construtivos'' (\emph{building blocks})
+úteis em regressão simbólica, na veradade, a representação em árvore sofre de forte
+epistasia posicional. O rebalanceamento dos operadores com mutação mista
+(perturbação gaussiana em ERC e mutação pontual) suavizou a paisagem,
+transformando a busca em um processo de exploração global intercalado por
+gradientes estocásticos locais.
+
+\subsubsection{Ameaças à Validade e Limitações}
+
+\begin{itemize}
+  \item \textbf{Custo computacional da $\eps$-Lexicase:}
+        Embora a $\eps$-lexicase tenha sido o método mais eficaz, seu custo
+        computacional escala com $\mathcal{O}(P \cdot N)$, exigindo a
+        avaliação de erros individuais caso a caso. Em problemas com centenas
+        de milhares de amostras, variantes como \emph{Down-sampled
+        Lexicase}~\cite{hernandez2019downsampled} seriam necessárias.
+  \item \textbf{Critério de parada fixo:}
+        Todos os experimentos utilizaram um orçamento fixo de 100 gerações.
+        Embora tenhamos mostrado que a saturação ocorria por volta da geração
+        80 nas execuções de 100 gerações, orçamentos adaptativos com parada
+        antecipada baseada em estagnação poderiam economizar tempo de máquina.
+  \item \textbf{Divisão fixa Treino/Teste:}
+        Em conformidade com as diretrizes do enunciado da disciplina,
+        utilizou-se a partição pré-definida de treino e teste, sem validação
+        cruzada ($k$-fold). Esse protocolo reflete com precisão cenários reais
+        de teste cego, mas os resultados podem apresentar sensibilidade à
+        distribuição das partições fornecidas.
+\end{itemize}
