@@ -185,3 +185,7 @@ Certifique-se de utilizar o Python do ambiente virtual `.venv`:
 * **Dossiê para o Relatório Final:** [`results/relatorio_final_dados/DOSSIE_RELATORIO_FINAL.md`](results/relatorio_final_dados/DOSSIE_RELATORIO_FINAL.md) (consolida todas as respostas e tabelas exigidas pelo enunciado do trabalho).
 * **Relatório de Auditoria da Fase 2:** [`results/AUDIT_PHASE2.md`](results/AUDIT_PHASE2.md) (detalha a cadeia *Dado Avaliado $\to$ Hipótese da Landscape $\to$ Intervenção $\to$ Resultado* para as 6 hipóteses).
 * **Relatório Executivo da Fase 1:** [`results/SUMMARY.md`](results/SUMMARY.md) (resultados consolidados da Seção 11 original).
+
+## 7. Repositório
+
+Repositório completo [aqui](https://github.com/BernardooVale/PG_NatComp), caso queira baixar o restante dos arquivos
